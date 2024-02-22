@@ -1,0 +1,106 @@
+#include <Arduino.h>
+#include <string.h>
+
+int ReadPin =A3;
+float V=0;
+float fix = 5./1023.;
+float readVal = 0;
+String msg = "";
+String F ="";
+int finish_counter = 0;
+int delaytime = 75;
+bool end = false;
+bool newmsg = false;
+void setup() 
+{
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  pinMode(ReadPin,INPUT);
+  
+  //ascii to english part:  
+
+}
+
+String asciiBinaryToString(const String& asciiBinary) {
+  String result = "";
+
+  // Ensure that the length is a multiple of 8 for valid ASCII binary
+  int length = asciiBinary.length();
+  int padding = length % 8;
+  if (padding != 0) {
+    length += (8 - padding);
+  }
+
+  // Process each group of 8 bits
+  for (int i = 0; i < length; i += 8) {
+    char currentChar = 0;
+
+    // Convert binary to character
+    for (int j = 0; j < 8; ++j) {
+      if (i + j < asciiBinary.length()) {
+        currentChar <<= 1;
+        currentChar |= (asciiBinary[i + j] == '1') ? 1 : 0;
+      }
+    }
+
+    // Append the character to the result
+    result += currentChar;
+  }
+  return result;
+}
+
+void loop() {
+  while (newmsg == false){
+  V = analogRead(ReadPin) * fix;
+  //Serial.println(V);
+  delay(delaytime);
+  if(V>1.00){
+    msg.concat("1");
+  }
+  else {
+    msg.concat("0");
+    msg = "";
+    }
+  if (msg == "11111111"){
+    msg = "";
+    newmsg = true;
+    Serial.println("New string incoming!");
+    }
+    }
+  while((end == false) &&(finish_counter!=8 && msg.length()%8 !=0) || msg.length()==0)
+  {
+    readVal  = analogRead(ReadPin);
+    V = readVal*fix;
+    if (V>1.0)
+    {
+      msg.concat("1");
+      //Serial.println(msg);
+      finish_counter +=1;
+      delay(delaytime);
+      
+    }
+    else
+    {
+      msg.concat("0");
+      //Serial.println(msg);
+      finish_counter = 0;
+      delay(delaytime);
+    }
+  }
+  if (finish_counter !=8) // not finish
+  {
+    Serial.print(asciiBinaryToString(msg));
+    finish_counter=0;
+    msg="";
+  }
+  else
+  {
+    end = true;
+  }
+  }
+
+
+
+
+
+
